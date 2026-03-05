@@ -328,12 +328,12 @@ export async function getPaymentApiUrl(): Promise<string> {
     'SELECT value FROM key_value WHERE key = ?',
     KEY_PAYMENT_API_URL
   );
-  return row?.value?.trim() || '';
+  return normalizeServerUrl(row?.value?.trim() || '');
 }
 
 export async function setPaymentApiUrl(url: string): Promise<void> {
   const database = getDb();
-  const val = url.trim();
+  const val = normalizeServerUrl(url.trim());
   if (val) {
     await database.runAsync(
       'INSERT OR REPLACE INTO key_value (key, value) VALUES (?, ?)',
@@ -343,4 +343,14 @@ export async function setPaymentApiUrl(url: string): Promise<void> {
   } else {
     await database.runAsync('DELETE FROM key_value WHERE key = ?', KEY_PAYMENT_API_URL);
   }
+}
+
+/** Ensure URL has a scheme; use https for non-localhost (required on iOS). */
+function normalizeServerUrl(url: string): string {
+  if (!url) return '';
+  const lower = url.toLowerCase();
+  if (lower.startsWith('http://') || lower.startsWith('https://')) return url;
+  const host = url.split('/')[0];
+  const isLocalhost = host === 'localhost' || host.startsWith('127.') || host.includes('localhost');
+  return isLocalhost ? `http://${url}` : `https://${url}`;
 }

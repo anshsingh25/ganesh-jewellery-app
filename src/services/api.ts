@@ -43,31 +43,48 @@ async function request<T>(
   path: string,
   body?: unknown
 ): Promise<T> {
-  const url = `${baseUrl.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+  const base = baseUrl.replace(/\/$/, '');
+  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body != null ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-  const text = await res.text();
-  let data: T;
   try {
-    data = text ? (JSON.parse(text) as T) : ({} as T);
-  } catch {
-    throw new Error(res.ok ? 'Invalid response' : text || res.statusText);
-  }
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: body != null ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-  if (!res.ok) {
-    const err = (data as { error?: string })?.error || res.statusText || 'Request failed';
-    throw new Error(err);
+    const text = await res.text();
+    let data: T;
+    try {
+      data = text ? (JSON.parse(text) as T) : ({} as T);
+    } catch {
+      throw new Error(res.ok ? 'Invalid response' : text || res.statusText);
+    }
+
+    if (!res.ok) {
+      const err = (data as { error?: string })?.error || res.statusText || 'Request failed';
+      throw new Error(err);
+    }
+    return data;
+  } catch (e: unknown) {
+    clearTimeout(timeoutId);
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg === 'Network request failed' || msg === 'AbortError' || (e instanceof TypeError && msg.includes('fetch'))) {
+      throw new Error(
+        'Cannot reach server. Check: (1) Server URL uses https:// (e.g. https://your-app.up.railway.app), (2) device has internet, (3) server is running.'
+      );
+    }
+    throw e;
   }
-  return data;
 }
 
 // Auth
