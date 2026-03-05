@@ -45,9 +45,6 @@ CREATE TABLE IF NOT EXISTS installments (
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 );
 
-DROP INDEX IF EXISTS idx_installment_customer ON installments;
-CREATE INDEX idx_installment_customer ON installments(customer_id);
-
 CREATE TABLE IF NOT EXISTS schemes (
   id VARCHAR(36) PRIMARY KEY,
   name VARCHAR(100) NOT NULL,

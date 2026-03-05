@@ -53,6 +53,13 @@ async function init() {
     const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     await conn.query(schema);
 
+    // Index may already exist on re-run; ignore duplicate key (Railway MySQL may not support DROP INDEX IF EXISTS)
+    try {
+      await conn.execute('CREATE INDEX idx_installment_customer ON installments(customer_id)');
+    } catch (e) {
+      if (e.code !== 'ER_DUP_KEYNAME' && e.errno !== 1061) throw e;
+    }
+
     const [users] = await conn.execute('SELECT id FROM users LIMIT 1');
     if (users.length === 0) {
       const pinHash = await bcrypt.hash('1234', 10);
