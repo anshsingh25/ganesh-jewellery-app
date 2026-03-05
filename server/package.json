@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node index.js",
+    "start": "node init-db.js && node index.js",
     "dev": "node index.js",
     "init-db": "node init-db.js"
   },
