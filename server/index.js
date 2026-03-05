@@ -141,8 +141,8 @@ app.get('/checkout', (req, res) => {
   res.send(html);
 });
 
-app.listen(PORT, () => {
-  console.log(`Ganesh Jewellers server at http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Ganesh Jewellers server at http://0.0.0.0:${PORT}`);
   console.log('Auth: POST /api/auth/owner-login, POST /api/auth/customer-login');
   console.log('API: /api/customers, /api/schemes, /api/settings');
   console.log('Payments: POST /api/create-order, POST /api/verify-payment, GET /checkout');
