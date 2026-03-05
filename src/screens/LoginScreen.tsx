@@ -14,7 +14,7 @@ import { useApp } from '../context/AppContext';
 import * as api from '../services/api';
 import { theme } from '../theme';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) {
   const { setUser, useApiMode, apiBaseUrl } = useApp();
   const [name, setName] = useState('Owner');
   const [pin, setPin] = useState('');
@@ -83,6 +83,14 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Enter</Text>
           )}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.changeUrlLink}
+          onPress={() => navigation.navigate('ServerUrl')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.changeUrlText}>Change Server URL</Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -144,4 +152,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
+  changeUrlLink: { marginTop: theme.spacing.lg, paddingVertical: theme.spacing.sm },
+  changeUrlText: { ...theme.typography.caption, color: theme.colors.primary, fontWeight: '600' },
 });

@@ -14,6 +14,7 @@ interface AppContextValue {
   customerToken: string | null;
   setUser: (u: User | null, token?: string | null) => void;
   setLoggedInCustomer: (c: Customer | null, token?: string | null) => Promise<void>;
+  refreshServerUrl: () => Promise<void>;
   refreshCustomers: () => Promise<Customer[]>;
   addCustomer: (c: Customer) => Promise<void>;
   updateCustomer: (c: Customer) => Promise<void>;
@@ -30,6 +31,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [ownerToken, setOwnerTokenState] = useState<string | null>(null);
   const [customerToken, setCustomerTokenState] = useState<string | null>(null);
+
+  const refreshServerUrl = useCallback(async () => {
+    const baseUrl = (await storage.getPaymentApiUrl())?.trim() || '';
+    setApiBaseUrl(baseUrl);
+    setUseApiMode(baseUrl.length > 0);
+  }, []);
 
   const refreshCustomers = useCallback(async () => {
     // When server is set: fetch from database (MySQL) only
@@ -192,6 +199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         customerToken,
         setUser,
         setLoggedInCustomer,
+        refreshServerUrl,
         refreshCustomers,
         addCustomer,
         updateCustomer,

@@ -16,6 +16,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import SchemesScreen from '../screens/SchemesScreen';
 import EditCustomerScreen from '../screens/EditCustomerScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
+import ServerUrlScreen from '../screens/ServerUrlScreen';
 
 import CustomerDashboardScreen from '../screens/customer/CustomerDashboardScreen';
 import CustomerInstallmentsScreen from '../screens/customer/CustomerInstallmentsScreen';
@@ -164,6 +165,11 @@ export default function AppNavigator() {
           name="CustomerLogin"
           component={CustomerLoginScreen}
           options={{ title: 'Customer Login', headerBackTitle: 'Back' }}
+        />
+        <Stack.Screen
+          name="ServerUrl"
+          component={ServerUrlScreen}
+          options={{ title: 'Server URL', headerBackTitle: 'Back' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
