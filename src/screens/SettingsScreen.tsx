@@ -13,6 +13,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [paymentApiUrl, setPaymentApiUrl] = useState('');
   const [saved, setSaved] = useState(false);
   const [copyingToDb, setCopyingToDb] = useState(false);
+  const [testingUrl, setTestingUrl] = useState(false);
 
   useEffect(() => {
     getMinimumAmount().then((n) => setMinimumAmount(n > 0 ? String(n) : ''));
@@ -29,6 +30,35 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const savingToServer = useApiMode && apiBaseUrl && ownerToken;
+
+  const testConnection = async () => {
+    const url = (paymentApiUrl || apiBaseUrl).trim();
+    if (!url) {
+      Alert.alert('No URL', 'Enter and save Server URL first, then tap Test connection.');
+      return;
+    }
+    const base = url.replace(/\/$/, '');
+    setTestingUrl(true);
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(base + '/', { method: 'GET', signal: controller.signal });
+      clearTimeout(t);
+      if (res.ok || res.status === 200) {
+        Alert.alert('Connection OK', 'This device can reach the server. You can log in with PIN 1234.');
+      } else {
+        Alert.alert('Unexpected response', `Server returned ${res.status}. URL may be wrong.`);
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      Alert.alert(
+        'Cannot reach server',
+        msg + '\n\nOn iPhone, use Wi‑Fi if 4G fails. Open the URL in Safari on this phone to confirm it loads.'
+      );
+    } finally {
+      setTestingUrl(false);
+    }
+  };
 
   const copyLocalCustomersToDatabase = async () => {
     if (!apiBaseUrl || !ownerToken) return;
@@ -109,7 +139,7 @@ export default function SettingsScreen({ navigation }: any) {
       </View>
 
       <Text style={styles.label}>Server URL (multi-device sync + payments)</Text>
-      <Text style={styles.hint}>Backend URL for sync across devices and UPI/Card payments. E.g. https://your-server.com or http://IP:3000. Restart app after saving.</Text>
+      <Text style={styles.hint}>Use https:// (e.g. https://your-app.up.railway.app). Save, then tap "Test connection" to verify from this device. Restart app after saving.</Text>
       <TextInput
         style={styles.input}
         value={paymentApiUrl}
@@ -128,6 +158,18 @@ export default function SettingsScreen({ navigation }: any) {
         activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Save Server URL</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.button, styles.buttonSecondary]}
+        onPress={testConnection}
+        disabled={testingUrl}
+        activeOpacity={0.8}
+      >
+        {testingUrl ? (
+          <ActivityIndicator color={theme.colors.primary} />
+        ) : (
+          <Text style={styles.buttonTextSecondary}>Test connection</Text>
+        )}
       </TouchableOpacity>
 
       {savingToServer && (
@@ -210,6 +252,13 @@ const styles = StyleSheet.create({
     ...theme.shadows.sm,
   },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  buttonSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    marginTop: -theme.spacing.lg,
+  },
+  buttonTextSecondary: { color: theme.colors.primary, fontWeight: '700', fontSize: 16 },
   link: { paddingVertical: theme.spacing.md },
   linkText: { ...theme.typography.body, color: theme.colors.primary, fontWeight: '600' },
 });
