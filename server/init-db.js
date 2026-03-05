@@ -1,7 +1,8 @@
 /**
  * Initialize MySQL database: create tables and seed default owner (pin: 1234).
- * Run: npm run init-db
+ * Run: npm run init-db (or on server start).
  * Creates the database if it does not exist.
+ * Retries connection for Railway/containers where MySQL may start after the app.
  */
 
 require('dotenv').config();
@@ -9,6 +10,20 @@ const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcrypt');
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function connectWithRetry(config, maxAttempts = 5) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await mysql.createConnection(config);
+    } catch (e) {
+      console.warn(`MySQL connection attempt ${attempt}/${maxAttempts} failed:`, e.message || e.code);
+      if (attempt === maxAttempts) throw e;
+      await sleep(3000);
+    }
+  }
+}
 
 async function init() {
   const database = process.env.MYSQL_DATABASE || 'ganesh_jewellers';
@@ -22,12 +37,12 @@ async function init() {
 
   let conn;
   try {
-    conn = await mysql.createConnection({ ...configWithoutDb, multipleStatements: true });
+    conn = await connectWithRetry({ ...configWithoutDb, multipleStatements: true });
     await conn.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
     await conn.end();
     conn = null;
 
-    conn = await mysql.createConnection({ ...config, multipleStatements: true });
+    conn = await connectWithRetry({ ...config, multipleStatements: true });
     const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     await conn.query(schema);
 
