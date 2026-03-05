@@ -31,6 +31,13 @@ Node.js + Express server with MySQL for multi-device sync and Razorpay for payme
 - **Customer self**: `GET/PUT /api/me` (customer JWT)
 - **Payments**: `POST /api/create-order`, `POST /api/verify-payment`, `GET /checkout`
 
+## Railway deploy
+
+- Set **Root Directory** to `server` for the app service.
+- **Connect MySQL to the app** so the app receives DB credentials:
+  - In the **MySQL** service → **Variables** → use **“Add variable reference”** (or **Connect**), and add each variable to the **ganesh-jewellery-app** service: `MYSQL_HOST` ← `MySQL.MYSQLHOST`, `MYSQL_PORT` ← `MySQL.MYSQLPORT`, `MYSQL_USER` ← `MySQL.MYSQLUSER`, `MYSQL_PASSWORD` ← `MySQL.MYSQLPASSWORD`, `MYSQL_DATABASE` ← `MySQL.MYSQLDATABASE`. The code also accepts Railway’s names directly: `MYSQLHOST`, `MYSQLPORT`, etc.
+- Ensure both services are in the same project so the app can reach `mysql.railway.internal`.
+
 ## App configuration
 
 In the app Settings, set **Server URL** to your deployed backend (e.g. `https://your-domain.com`). Restart the app to enable multi-device sync.

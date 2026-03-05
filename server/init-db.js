@@ -25,15 +25,22 @@ async function connectWithRetry(config, maxAttempts = 5) {
   }
 }
 
+// Railway uses MYSQLHOST, MYSQLPORT, MYSQL_URL, etc.; support both naming styles
+function getEnv(name, altName, fallback) {
+  return process.env[name] || process.env[altName] || fallback;
+}
+
 async function init() {
-  const database = process.env.MYSQL_DATABASE || 'ganesh_jewellers';
+  const database = getEnv('MYSQL_DATABASE', 'MYSQLDATABASE', 'ganesh_jewellers');
   const configWithoutDb = {
-    host: process.env.MYSQL_HOST || 'localhost',
-    port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || '',
+    host: getEnv('MYSQL_HOST', 'MYSQLHOST', 'localhost'),
+    port: parseInt(getEnv('MYSQL_PORT', 'MYSQLPORT', '3306'), 10),
+    user: getEnv('MYSQL_USER', 'MYSQLUSER', 'root'),
+    password: getEnv('MYSQL_PASSWORD', 'MYSQLPASSWORD', ''),
   };
   const config = { ...configWithoutDb, database };
+
+  console.log('MySQL connect:', configWithoutDb.host + ':' + configWithoutDb.port, 'user=' + configWithoutDb.user, 'database=' + database);
 
   let conn;
   try {

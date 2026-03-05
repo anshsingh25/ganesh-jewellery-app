@@ -1,19 +1,24 @@
 /**
  * MySQL connection pool for Ganesh Jewellers backend.
+ * Supports both MYSQL_HOST and MYSQLHOST (Railway) style env vars.
  */
 
 const mysql = require('mysql2/promise');
 
 let pool = null;
 
+function getEnv(name, altName, fallback) {
+  return process.env[name] || process.env[altName] || fallback;
+}
+
 function getPool() {
   if (!pool) {
     const config = {
-      host: process.env.MYSQL_HOST || 'localhost',
-      port: parseInt(process.env.MYSQL_PORT || '3306', 10),
-      user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || 'ganesh_jewellers',
+      host: getEnv('MYSQL_HOST', 'MYSQLHOST', 'localhost'),
+      port: parseInt(getEnv('MYSQL_PORT', 'MYSQLPORT', '3306'), 10),
+      user: getEnv('MYSQL_USER', 'MYSQLUSER', 'root'),
+      password: getEnv('MYSQL_PASSWORD', 'MYSQLPASSWORD', ''),
+      database: getEnv('MYSQL_DATABASE', 'MYSQLDATABASE', 'ganesh_jewellers'),
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
