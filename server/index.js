@@ -32,12 +32,17 @@ app.use(express.json());
 
 // Root - so browser shows something instead of "page isn't working"
 app.get('/', (req, res) => {
+  const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+  const host = req.get('x-forwarded-host') || req.get('host') || 'localhost';
+  const serverUrl = `${protocol}://${host}`.replace(/\/$/, '');
   res.type('html').send(`
     <!DOCTYPE html>
     <html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ganesh Jewellers API</title></head>
     <body style="font-family:system-ui;padding:2rem;max-width:480px;margin:0 auto;">
       <h1 style="color:#8B6914;">Ganesh Jewellers</h1>
-      <p>API server is running. Use the mobile app and set Server URL to <strong>http://localhost:3000</strong> in Settings.</p>
+      <p>API server is running. Use the mobile app and set <strong>Server URL</strong> to:</p>
+      <p style="background:#f5f5f5;padding:0.75rem;border-radius:8px;word-break:break-all;"><strong>${serverUrl}</strong></p>
+      <p>in the app Settings, then log in with PIN 1234.</p>
       <p><small>Auth: POST /api/auth/owner-login, /api/auth/customer-login &middot; API: /api/customers, /api/schemes, /api/settings</small></p>
     </body></html>
   `);
