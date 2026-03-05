@@ -15,6 +15,50 @@ Then press **i** for iOS simulator or **a** for Android emulator, or scan the QR
 
 ---
 
+## Share the app so others can use it
+
+### 1. Share via Expo Go (quick, for testers)
+
+Others can run the app without installing a standalone build:
+
+1. **You:** Run a tunnel so the app is reachable from anywhere:
+   ```bash
+   npm run start:tunnel
+   ```
+2. Share the **QR code** or **link** (e.g. `exp://...`) with testers.
+3. **They:** Install **Expo Go** from the [Play Store](https://play.google.com/store/apps/details?id=host.exp.exponent) or [App Store](https://apps.apple.com/app/expo-go/id982107779), then scan the QR code or open the link.
+4. **They:** In the app, go to **Settings** → set **Server URL** to your backend (e.g. `https://ganesh-jewellery-app-production.up.railway.app`) → restart the app and log in with PIN 1234.
+
+They use the app through Expo Go; data is on your Railway backend.
+
+### 2. Build an APK so people can download and install (Android)
+
+Build a standalone APK that anyone can install (no Expo Go needed):
+
+1. **One-time:** Install EAS CLI and log in:
+   ```bash
+   npm install -g eas-cli
+   eas login
+   ```
+2. **One-time:** Link the project to your Expo account (when prompted):
+   ```bash
+   eas build:configure
+   ```
+3. **Build the APK:**
+   ```bash
+   npm run build:android
+   ```
+   or:
+   ```bash
+   eas build --platform android --profile preview
+   ```
+4. When the build finishes, EAS shows a **download link** for the `.apk`. Share that link (e.g. by WhatsApp, email, or your website). Users open the link on their Android phone, download the APK, and install it (they may need to allow “Install from unknown sources” once).
+5. **They:** Open the app → **Settings** → set **Server URL** to your Railway URL → restart and log in with PIN 1234.
+
+The `eas.json` in this repo is set up so the **preview** and **production** profiles produce an **APK** (not only Play Store format). Use **preview** for testing and sharing the download link.
+
+---
+
 ## What this app does (with examples)
 
 ### 1. Add customer → Auto EMI schedule
