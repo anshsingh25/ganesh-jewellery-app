@@ -57,6 +57,35 @@ Build a standalone APK that anyone can install (no Expo Go needed):
 
 The `eas.json` in this repo is set up so the **preview** and **production** profiles produce an **APK** (not only Play Store format). Use **preview** for testing and sharing the download link.
 
+### 3. Build for iPhone (iOS) – TestFlight or App Store
+
+For iPhone, Apple does not allow direct APK-style download links. You distribute via **TestFlight** (testers) or the **App Store** (everyone). You need an **Apple Developer account** ($99/year).
+
+**One-time setup**
+
+1. Enroll at [developer.apple.com](https://developer.apple.com).
+2. In the project, run:
+   ```bash
+   eas build --platform ios --profile preview
+   ```
+   (or `npm run build:ios`). EAS will ask you to create/select an Apple Developer account and set up credentials; follow the prompts.
+3. When the build completes, EAS gives a link to the `.ipa` file.
+
+**Share with testers (TestFlight)**
+
+1. Submit the build to App Store Connect / TestFlight:
+   ```bash
+   eas submit --platform ios --profile preview
+   ```
+   Or use the EAS dashboard: **Builds** → select the iOS build → **Submit to TestFlight**.
+2. In [App Store Connect](https://appstoreconnect.apple.com), open your app → **TestFlight** → add **Internal** or **External** testers (by email).
+3. Testers receive an email invite, install the **TestFlight** app from the App Store, then install **Ganesh Jewellers** from TestFlight.
+4. **They:** Open the app → **Settings** → set **Server URL** to your Railway URL → restart and log in with PIN 1234.
+
+**Publish to the App Store (optional)**
+
+When you’re ready for public release, use a **production** build and submit from EAS or App Store Connect. Users then search for the app and download it from the App Store.
+
 ---
 
 ## What this app does (with examples)
