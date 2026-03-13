@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import type { Customer } from '../types';
 import { useApp } from '../context/AppContext';
@@ -48,13 +49,16 @@ function CustomerRow({
 export default function CustomersScreen({ navigation }: any) {
   const { customers } = useApp();
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'closed'>('all');
+  const [schemeFilter, setSchemeFilter] = useState<'all' | '5' | '11'>('all');
 
-  const filtered = customers.filter(
-    (c) =>
-      c.status === 'active' &&
-      (c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.mobile.includes(search))
-  );
+  const filtered = customers.filter((c) => {
+    const matchSearch =
+      c.name.toLowerCase().includes(search.toLowerCase()) || c.mobile.includes(search);
+    const matchStatus = statusFilter === 'all' || c.status === statusFilter;
+    const matchScheme = schemeFilter === 'all' || String(c.schemeType) === schemeFilter;
+    return matchSearch && matchStatus && matchScheme;
+  });
 
   return (
     <View style={styles.container}>
@@ -65,6 +69,37 @@ export default function CustomersScreen({ navigation }: any) {
         onChangeText={setSearch}
         placeholderTextColor={theme.colors.textSecondary}
       />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filtersRow}
+        contentContainerStyle={styles.filtersContent}
+      >
+        <Text style={styles.filterLabel}>Status:</Text>
+        {(['all', 'active', 'completed', 'closed'] as const).map((s) => (
+          <TouchableOpacity
+            key={s}
+            style={[styles.filterChip, statusFilter === s && styles.filterChipActive]}
+            onPress={() => setStatusFilter(s)}
+          >
+            <Text style={[styles.filterChipText, statusFilter === s && styles.filterChipTextActive]}>
+              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        <Text style={[styles.filterLabel, { marginLeft: theme.spacing.md }]}>Scheme:</Text>
+        {(['all', '5', '11'] as const).map((s) => (
+          <TouchableOpacity
+            key={s}
+            style={[styles.filterChip, schemeFilter === s && styles.filterChipActive]}
+            onPress={() => setSchemeFilter(s)}
+          >
+            <Text style={[styles.filterChipText, schemeFilter === s && styles.filterChipTextActive]}>
+              {s === 'all' ? 'All' : `${s} mo`}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('AddCustomer')}
@@ -84,7 +119,9 @@ export default function CustomersScreen({ navigation }: any) {
         contentContainerStyle={styles.list}
         ListEmptyComponent={
           <Text style={styles.empty}>
-            {search ? 'No customers match.' : 'No customers yet. Add one!'}
+            {search || statusFilter !== 'all' || schemeFilter !== 'all'
+              ? 'No customers match the filters.'
+              : 'No customers yet. Add one!'}
           </Text>
         }
       />
@@ -106,6 +143,28 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     ...theme.shadows.sm,
   },
+  filtersRow: { maxHeight: 44, marginBottom: theme.spacing.sm },
+  filtersContent: {
+    paddingHorizontal: theme.spacing.md,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: theme.spacing.xs,
+  },
+  filterLabel: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginRight: theme.spacing.xs,
+  },
+  filterChip: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surface,
+    ...theme.shadows.sm,
+  },
+  filterChipActive: { backgroundColor: theme.colors.primary },
+  filterChipText: { ...theme.typography.caption, color: theme.colors.text },
+  filterChipTextActive: { color: '#fff' },
   addButton: {
     marginHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.md,

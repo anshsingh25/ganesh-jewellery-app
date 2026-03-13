@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS customers (
   id VARCHAR(36) PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   mobile VARCHAR(20) NOT NULL,
+  whatsapp_number VARCHAR(20),
   address TEXT,
   id_proof_url TEXT,
   customer_pin VARCHAR(20),
@@ -63,3 +64,27 @@ CREATE TABLE IF NOT EXISTS key_value (
 INSERT IGNORE INTO schemes (id, name, months, is_active) VALUES
 ('scheme-5', '5 Months', 5, 1),
 ('scheme-11', '11 Months', 11, 1);
+
+-- Live rates: table 1 = Product / Buy / Sell (e.g. gold impurity)
+CREATE TABLE IF NOT EXISTS live_rates_buy_sell (
+  id VARCHAR(36) PRIMARY KEY,
+  product VARCHAR(255) NOT NULL,
+  buy_value VARCHAR(50),
+  sell_value VARCHAR(50) NOT NULL,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Live rates: table 2 = Product / Bid / Ask / High-Low
+CREATE TABLE IF NOT EXISTS live_rates_bid_ask (
+  id VARCHAR(36) PRIMARY KEY,
+  product VARCHAR(255) NOT NULL,
+  bid VARCHAR(50),
+  ask VARCHAR(50),
+  high VARCHAR(50),
+  low VARCHAR(50),
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

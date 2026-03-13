@@ -26,6 +26,11 @@ export default function LoginScreen({ navigation }: any) {
       try {
         const { token, user } = await api.ownerLogin(apiBaseUrl, name.trim() || 'Owner', pin);
         setUser(user, token);
+        try {
+          await api.setServerUrlOnServer(apiBaseUrl, token, apiBaseUrl);
+        } catch (_) {
+          // Server URL save failed; login still succeeded
+        }
       } catch (e: any) {
         Alert.alert('Login failed', e?.message || 'Invalid PIN or server error.');
       } finally {

@@ -48,6 +48,7 @@ function rowToCustomer(row) {
     id: row.id,
     name: row.name,
     mobile: row.mobile,
+    whatsappNumber: row.whatsapp_number || undefined,
     address: row.address || undefined,
     idProofUrl: row.id_proof_url || undefined,
     customerPin: row.customer_pin || undefined,
@@ -82,7 +83,21 @@ function rowToInstallment(row) {
 // GET /api/customers
 router.get('/', async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM customers ORDER BY created_at DESC');
+    const { status, schemeType } = req.query;
+    let sql = 'SELECT * FROM customers';
+    const params = [];
+    const conditions = [];
+    if (status && String(status).trim() !== '') {
+      conditions.push('status = ?');
+      params.push(String(status).trim());
+    }
+    if (schemeType !== undefined && schemeType !== null && String(schemeType).trim() !== '') {
+      conditions.push('scheme_type = ?');
+      params.push(Number(schemeType));
+    }
+    if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+    sql += ' ORDER BY created_at DESC';
+    const rows = await query(sql, params);
     const result = [];
     let totalInstallments = 0;
     for (const row of rows) {
@@ -137,12 +152,13 @@ router.post('/', async (req, res) => {
     try {
       await conn.beginTransaction();
       await conn.execute(
-        `INSERT INTO customers (id, name, mobile, address, id_proof_url, customer_pin, scheme_type, monthly_emi_amount, start_date, status, completed_date, created_at, updated_at, document_status, document_verified_at, document_verified_by, auto_pay_enabled, scheme_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO customers (id, name, mobile, whatsapp_number, address, id_proof_url, customer_pin, scheme_type, monthly_emi_amount, start_date, status, completed_date, created_at, updated_at, document_status, document_verified_at, document_verified_by, auto_pay_enabled, scheme_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           c.id,
           c.name,
           c.mobile,
+          c.whatsappNumber || null,
           c.address || null,
           c.idProofUrl || null,
           c.customerPin || null,
@@ -207,10 +223,11 @@ router.put('/:id', async (req, res) => {
       await conn.beginTransaction();
       const now = toMySQLDateTime(new Date());
       await conn.execute(
-        `UPDATE customers SET name=?, mobile=?, address=?, id_proof_url=?, customer_pin=?, scheme_type=?, monthly_emi_amount=?, start_date=?, status=?, completed_date=?, updated_at=?, document_status=?, document_verified_at=?, document_verified_by=?, auto_pay_enabled=?, scheme_id=? WHERE id=?`,
+        `UPDATE customers SET name=?, mobile=?, whatsapp_number=?, address=?, id_proof_url=?, customer_pin=?, scheme_type=?, monthly_emi_amount=?, start_date=?, status=?, completed_date=?, updated_at=?, document_status=?, document_verified_at=?, document_verified_by=?, auto_pay_enabled=?, scheme_id=? WHERE id=?`,
         [
           c.name,
           c.mobile,
+          c.whatsappNumber || null,
           c.address || null,
           c.idProofUrl || null,
           c.customerPin || null,

@@ -30,6 +30,8 @@ export interface Customer {
   id: string;
   name: string;
   mobile: string;
+  /** WhatsApp number for sending login PIN; defaults to mobile if not set */
+  whatsappNumber?: string;
   address?: string;
   idProofUrl?: string;
   /** Auto-generated PIN; sent to customer via WhatsApp */
@@ -77,4 +79,27 @@ export interface DashboardStats {
   pendingThisMonth: number;
   overdueCount: number;
   overdueAmount: number;
+}
+
+export interface LiveRateBuySell {
+  id: string;
+  product: string;
+  buyValue?: string;
+  sellValue: string;
+  sortOrder?: number;
+}
+
+export interface LiveRateBidAsk {
+  id: string;
+  product: string;
+  bid?: string;
+  ask?: string;
+  high?: string;
+  low?: string;
+  sortOrder?: number;
+}
+
+export interface LiveRatesData {
+  buySell: LiveRateBuySell[];
+  bidAsk: LiveRateBidAsk[];
 }

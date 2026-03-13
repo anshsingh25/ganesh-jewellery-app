@@ -151,7 +151,15 @@ export default function SettingsScreen({ navigation }: any) {
       <TouchableOpacity
         style={styles.button}
         onPress={async () => {
-          await storage.setPaymentApiUrl(paymentApiUrl);
+          const urlToSave = paymentApiUrl.trim();
+          await storage.setPaymentApiUrl(urlToSave);
+          if (apiBaseUrl && ownerToken && urlToSave) {
+            try {
+              await api.setServerUrlOnServer(apiBaseUrl, ownerToken, urlToSave);
+            } catch (_) {
+              // Server save failed; local save still applied
+            }
+          }
           setSaved(true);
           setTimeout(() => setSaved(false), 2000);
         }}
@@ -197,6 +205,21 @@ export default function SettingsScreen({ navigation }: any) {
         activeOpacity={0.7}
       >
         <Text style={styles.linkText}>Manage schemes →</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.link}
+        onPress={() => navigation.navigate('LiveRates')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.linkText}>View Live Rates →</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.link}
+        onPress={() => navigation.navigate('LiveRatesAdmin')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.linkText}>Manage Live Rates (add/edit) →</Text>
       </TouchableOpacity>
     </ScrollView>
   );

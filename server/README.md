@@ -40,4 +40,5 @@ Node.js + Express server with MySQL for multi-device sync and Razorpay for payme
 
 ## App configuration
 
-In the app Settings, set **Server URL** to your deployed backend (e.g. `https://your-domain.com`). Restart the app to enable multi-device sync.
+In the app Settings, set **Server URL** to your deployed backen
+o0'/ bhd (e.g. `https://your-domain.com`). Restart the app to enable multi-device sync.

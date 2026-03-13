@@ -16,6 +16,7 @@ function rowToCustomer(row: Record<string, unknown>): Omit<Customer, 'installmen
     id: row.id as string,
     name: row.name as string,
     mobile: row.mobile as string,
+    whatsappNumber: (row.whatsappNumber as string) || undefined,
     address: (row.address as string) || undefined,
     idProofUrl: (row.idProofUrl as string) || undefined,
     customerPin: (row.customerPin as string) || undefined,
@@ -86,11 +87,12 @@ export async function addCustomer(customer: Customer): Promise<void> {
   const database = getDb();
   await database.withTransactionAsync(async () => {
     await database.runAsync(
-      `INSERT INTO customer (id, name, mobile, address, idProofUrl, customerPin, schemeType, monthlyEmiAmount, startDate, status, completedDate, createdAt, updatedAt, documentStatus, documentVerifiedAt, documentVerifiedBy, autoPayEnabled, schemeId)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO customer (id, name, mobile, whatsappNumber, address, idProofUrl, customerPin, schemeType, monthlyEmiAmount, startDate, status, completedDate, createdAt, updatedAt, documentStatus, documentVerifiedAt, documentVerifiedBy, autoPayEnabled, schemeId)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       customer.id,
       customer.name,
       customer.mobile,
+      customer.whatsappNumber ?? null,
       customer.address ?? null,
       customer.idProofUrl ?? null,
       customer.customerPin ?? null,
@@ -130,10 +132,11 @@ export async function updateCustomer(updated: Customer): Promise<void> {
   const now = new Date().toISOString();
   await database.withTransactionAsync(async () => {
     await database.runAsync(
-      `UPDATE customer SET name=?, mobile=?, address=?, idProofUrl=?, customerPin=?, schemeType=?, monthlyEmiAmount=?, startDate=?, status=?, completedDate=?, updatedAt=?, documentStatus=?, documentVerifiedAt=?, documentVerifiedBy=?, autoPayEnabled=?, schemeId=?
+      `UPDATE customer SET name=?, mobile=?, whatsappNumber=?, address=?, idProofUrl=?, customerPin=?, schemeType=?, monthlyEmiAmount=?, startDate=?, status=?, completedDate=?, updatedAt=?, documentStatus=?, documentVerifiedAt=?, documentVerifiedBy=?, autoPayEnabled=?, schemeId=?
        WHERE id = ?`,
       updated.name,
       updated.mobile,
+      updated.whatsappNumber ?? null,
       updated.address ?? null,
       updated.idProofUrl ?? null,
       updated.customerPin ?? null,

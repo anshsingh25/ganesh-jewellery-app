@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Customer, User, Scheme } from '../types';
+import type { Customer, User, Scheme, LiveRatesData, LiveRateBuySell, LiveRateBidAsk } from '../types';
 
 const TOKEN_KEY = '@ganesh_auth_token';
 const OWNER_TOKEN_KEY = '@ganesh_owner_token';
@@ -181,4 +181,66 @@ export async function getMinimumAmount(baseUrl: string, token: string): Promise<
 
 export async function setMinimumAmount(baseUrl: string, token: string, amount: number): Promise<void> {
   await request(baseUrl, token, 'PUT', '/api/settings/min-amount', { value: amount });
+}
+
+// Server URL (payment-url) – save on server so it can be synced across devices
+export async function getServerUrlFromServer(baseUrl: string, token: string): Promise<string> {
+  const { value } = await request<{ value: string }>(baseUrl, token, 'GET', '/api/settings/payment-url');
+  return value?.trim() || '';
+}
+
+export async function setServerUrlOnServer(baseUrl: string, token: string, url: string): Promise<void> {
+  await request(baseUrl, token, 'PUT', '/api/settings/payment-url', { value: url.trim() });
+}
+
+export async function getLiveRates(baseUrl: string): Promise<LiveRatesData> {
+  const base = baseUrl.replace(/\/$/, '');
+  const url = `${base}/api/live-rates`;
+  const res = await fetch(url, { method: 'GET' });
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : { buySell: [], bidAsk: [] };
+  if (!res.ok) throw new Error((data as { error?: string })?.error || res.statusText);
+  return data;
+}
+
+export async function addLiveRateBuySell(
+  baseUrl: string,
+  token: string,
+  item: { product: string; buyValue?: string; sellValue: string; sortOrder?: number }
+): Promise<LiveRateBuySell> {
+  return request<LiveRateBuySell>(baseUrl, token, 'POST', '/api/live-rates/buy-sell', item);
+}
+
+export async function addLiveRateBidAsk(
+  baseUrl: string,
+  token: string,
+  item: { product: string; bid?: string; ask?: string; high?: string; low?: string; sortOrder?: number }
+): Promise<LiveRateBidAsk> {
+  return request<LiveRateBidAsk>(baseUrl, token, 'POST', '/api/live-rates/bid-ask', item);
+}
+
+export async function updateLiveRateBuySell(
+  baseUrl: string,
+  token: string,
+  id: string,
+  item: Partial<{ product: string; buyValue: string; sellValue: string; sortOrder: number }>
+): Promise<LiveRateBuySell> {
+  return request<LiveRateBuySell>(baseUrl, token, 'PUT', `/api/live-rates/buy-sell/${id}`, item);
+}
+
+export async function updateLiveRateBidAsk(
+  baseUrl: string,
+  token: string,
+  id: string,
+  item: Partial<{ product: string; bid: string; ask: string; high: string; low: string; sortOrder: number }>
+): Promise<LiveRateBidAsk> {
+  return request<LiveRateBidAsk>(baseUrl, token, 'PUT', `/api/live-rates/bid-ask/${id}`, item);
+}
+
+export async function deleteLiveRateBuySell(baseUrl: string, token: string, id: string): Promise<void> {
+  await request(baseUrl, token, 'DELETE', `/api/live-rates/buy-sell/${id}`);
+}
+
+export async function deleteLiveRateBidAsk(baseUrl: string, token: string, id: string): Promise<void> {
+  await request(baseUrl, token, 'DELETE', `/api/live-rates/bid-ask/${id}`);
 }

@@ -13,16 +13,35 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": { "supportsTablet": true },
+    "ios": {
+      "supportsTablet": true
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.singhsaimanil21.ganesh_jewellers"
     },
-    "web": { "favicon": "./assets/favicon.png" },
-    "plugins": ["expo-sqlite", "expo-web-browser"]
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "dc1b7619-61df-4d21-9f12-f13fe10a335f"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/dc1b7619-61df-4d21-9f12-f13fe10a335f"
+    }
   }
 }

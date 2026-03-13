@@ -79,6 +79,16 @@ export default function DashboardScreen() {
         color={theme.colors.overdue}
       />
 
+      <TouchableOpacity
+        style={styles.liveRatesCard}
+        onPress={() => (navigation as any).navigate('LiveRates')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.liveRatesIcon}>📊</Text>
+        <Text style={styles.liveRatesTitle}>Live Rates</Text>
+        <Text style={styles.liveRatesSubtitle}>Gold, Silver & currency</Text>
+      </TouchableOpacity>
+
       {overdueList.length > 0 && (
         <View style={styles.overdueSection}>
           <Text style={styles.overdueTitle}>⚠ Overdue customers</Text>
@@ -139,6 +149,18 @@ const styles = StyleSheet.create({
   },
   overdueName: { ...theme.typography.body, color: theme.colors.text },
   overdueAmount: { ...theme.typography.caption, color: theme.colors.overdue },
+  liveRatesCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.gold,
+    ...theme.shadows.sm,
+  },
+  liveRatesIcon: { fontSize: 20, marginBottom: 4 },
+  liveRatesTitle: { ...theme.typography.subtitle, color: theme.colors.text },
+  liveRatesSubtitle: { ...theme.typography.caption, color: theme.colors.textSecondary, marginTop: 4 },
   logoutBtn: { marginRight: 12, paddingVertical: 4, paddingHorizontal: 8 },
   logoutText: { color: theme.colors.primaryDark, fontWeight: '600', fontSize: 16 },
 });

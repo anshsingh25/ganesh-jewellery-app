@@ -11,6 +11,7 @@ import {
   Platform,
   Share,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import type { Customer, Scheme } from '../types';
 import { useApp } from '../context/AppContext';
@@ -20,12 +21,14 @@ import { generateCustomerPin } from '../utils/pin';
 import { getCustomerPinWhatsAppMessage } from '../utils/whatsappMessage';
 import { useSyncedStorage } from '../hooks/useSyncedStorage';
 import { theme } from '../theme';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function AddCustomerScreen({ navigation }: any) {
   const { addCustomer } = useApp();
-  const { getSchemes, getMinimumAmount } = useSyncedStorage();
+  const { getSchemes, getMinimumAmount, setMinimumAmount } = useSyncedStorage();
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [address, setAddress] = useState('');
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [minimumAmount, setMinimumAmount] = useState(0);
@@ -35,6 +38,8 @@ export default function AddCustomerScreen({ navigation }: any) {
     new Date().toISOString().slice(0, 10)
   );
   const [saving, setSaving] = useState(false);
+  const [documentUri, setDocumentUri] = useState<string | null>(null);
+  const [documentBase64, setDocumentBase64] = useState<string | null>(null);
 
   useEffect(() => {
     getSchemes().then(setSchemes);
@@ -64,7 +69,9 @@ export default function AddCustomerScreen({ navigation }: any) {
         id,
         name: name.trim(),
         mobile: mobile.trim(),
+        whatsappNumber: whatsappNumber.trim() || undefined,
         address: address.trim() || undefined,
+        idProofUrl: documentBase64 || documentUri || undefined,
         customerPin: pin,
         schemeType: selectedMonths as 5 | 11,
         monthlyEmiAmount: amount,
@@ -76,21 +83,34 @@ export default function AddCustomerScreen({ navigation }: any) {
         updatedAt: now,
       };
       await addCustomer(customer);
+      if (amount >= minimumAmount) {
+        await setMinimumAmount(amount);
+      }
       scheduleRemindersForCustomer(customer).catch(() => {});
 
+      const sendTo = (whatsappNumber.trim() || mobile.trim()).replace(/\D/g, '');
       const message = getCustomerPinWhatsAppMessage(name.trim(), pin, mobile.trim());
+      const waUrl = sendTo ? `https://wa.me/91${sendTo}?text=${encodeURIComponent(message)}` : null;
       Alert.alert(
         'Customer added',
-        `PIN for ${name.trim()}: ${pin}\n\nShare this PIN to the customer via WhatsApp.`,
+        `PIN for ${name.trim()}: ${pin}\n\n${waUrl ? 'Tap "Open WhatsApp" to send login details to customer.' : 'Share the PIN via WhatsApp manually.'}`,
         [
           { text: 'OK', onPress: () => navigation.goBack() },
+          ...(waUrl
+            ? [
+                {
+                  text: 'Open WhatsApp',
+                  onPress: () => {
+                    Linking.openURL(waUrl).catch(() => {});
+                    navigation.goBack();
+                  },
+                },
+              ]
+            : []),
           {
-            text: 'Share via WhatsApp',
+            text: 'Share',
             onPress: () => {
-              Share.share({
-                message,
-                title: 'Ganesh Jewellers – Your Login PIN',
-              }).finally(() => navigation.goBack());
+              Share.share({ message, title: 'Ganesh Jewellers – Your Login PIN' }).finally(() => navigation.goBack());
             },
           },
         ]
@@ -109,6 +129,28 @@ export default function AddCustomerScreen({ navigation }: any) {
   const schemeOptions = schemes.length > 0
     ? schemes
     : [{ id: '5', name: '5 Months', months: 5 }, { id: '11', name: '11 Months', months: 11 }];
+
+  const pickImage = async (useCamera: boolean) => {
+    const { status } = useCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow camera or photo library access to add a document.');
+      return;
+    }
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, base64: true });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    setDocumentUri(asset.uri);
+    setDocumentBase64(asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : null);
+  };
+
+  const clearDocument = () => {
+    setDocumentUri(null);
+    setDocumentBase64(null);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -140,6 +182,16 @@ export default function AddCustomerScreen({ navigation }: any) {
           placeholderTextColor={theme.colors.textSecondary}
         />
 
+        <Text style={styles.label}>WhatsApp number (for sending login PIN)</Text>
+        <TextInput
+          style={styles.input}
+          value={whatsappNumber}
+          onChangeText={setWhatsappNumber}
+          placeholder="Same as mobile or different"
+          keyboardType="phone-pad"
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+
         <Text style={styles.label}>Address (optional)</Text>
         <TextInput
           style={[styles.input, styles.inputMultiline]}
@@ -149,6 +201,24 @@ export default function AddCustomerScreen({ navigation }: any) {
           multiline
           placeholderTextColor={theme.colors.textSecondary}
         />
+
+        <Text style={styles.label}>Document (ID proof / optional)</Text>
+        <View style={styles.documentRow}>
+          <TouchableOpacity style={styles.docButton} onPress={() => pickImage(true)} activeOpacity={0.8}>
+            <Text style={styles.docButtonText}>📷 Take photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.docButton} onPress={() => pickImage(false)} activeOpacity={0.8}>
+            <Text style={styles.docButtonText}>📁 Choose file</Text>
+          </TouchableOpacity>
+        </View>
+        {(documentUri || documentBase64) && (
+          <View style={styles.documentPreview}>
+            <Text style={styles.documentPreviewText}>Document attached</Text>
+            <TouchableOpacity onPress={clearDocument} style={styles.clearDoc}>
+              <Text style={styles.clearDocText}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <Text style={styles.label}>Scheme</Text>
         <View style={styles.schemeRow}>
@@ -231,6 +301,20 @@ const styles = StyleSheet.create({
   schemeBtnText: { ...theme.typography.body, color: theme.colors.textSecondary },
   schemeBtnTextActive: { color: theme.colors.primary, fontWeight: '600' },
   pinHint: { ...theme.typography.caption, color: theme.colors.textSecondary, marginTop: 12 },
+  documentRow: { flexDirection: 'row', gap: 12, marginVertical: 8 },
+  docButton: {
+    flex: 1,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  docButtonText: { ...theme.typography.body },
+  documentPreview: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  documentPreviewText: { ...theme.typography.caption, color: theme.colors.paid },
+  clearDoc: { padding: 4 },
+  clearDocText: { ...theme.typography.caption, color: theme.colors.overdue },
   submit: {
     backgroundColor: theme.colors.primary,
     padding: theme.spacing.md,

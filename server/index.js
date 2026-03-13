@@ -14,6 +14,7 @@ const customersRouter = require('./routes/customers');
 const schemesRouter = require('./routes/schemes');
 const settingsRouter = require('./routes/settings');
 const meRouter = require('./routes/me');
+const liveRatesRouter = require('./routes/liveRates');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +57,9 @@ app.use('/api/customers', authMiddleware, ownerOnly, customersRouter);
 app.use('/api/schemes', authMiddleware, ownerOnly, schemesRouter);
 app.use('/api/settings', authMiddleware, settingsRouter);
 app.use('/api/me', authMiddleware, meRouter);
+
+// Live rates: GET public; POST/PUT/DELETE require owner auth (handled inside router)
+app.use('/api/live-rates', liveRatesRouter);
 
 // Payment endpoints (no auth - called from app with order context)
 app.post('/api/create-order', async (req, res) => {

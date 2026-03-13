@@ -17,6 +17,8 @@ import SchemesScreen from '../screens/SchemesScreen';
 import EditCustomerScreen from '../screens/EditCustomerScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import ServerUrlScreen from '../screens/ServerUrlScreen';
+import LiveRatesScreen from '../screens/LiveRatesScreen';
+import LiveRatesAdminScreen from '../screens/LiveRatesAdminScreen';
 
 import CustomerDashboardScreen from '../screens/customer/CustomerDashboardScreen';
 import CustomerInstallmentsScreen from '../screens/customer/CustomerInstallmentsScreen';
@@ -137,6 +139,8 @@ export default function AppNavigator() {
           <Stack.Screen name="EditCustomer" component={EditCustomerScreen} options={{ title: 'Edit Customer' }} />
           <Stack.Screen name="Schemes" component={SchemesScreen} options={{ title: 'Schemes' }} />
           <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} options={{ title: 'Payment methods' }} />
+          <Stack.Screen name="LiveRates" component={LiveRatesScreen} options={{ title: 'Live Rates' }} />
+          <Stack.Screen name="LiveRatesAdmin" component={LiveRatesAdminScreen} options={{ title: 'Manage Live Rates' }} />
         </Stack.Navigator>
       </NavigationContainer>
     );

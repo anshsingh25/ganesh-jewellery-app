@@ -121,6 +121,7 @@ async function ensureCustomerV2Columns(database: SQLiteDatabase): Promise<void> 
     { sql: 'ALTER TABLE customer ADD COLUMN documentVerifiedBy TEXT', name: 'documentVerifiedBy' },
     { sql: 'ALTER TABLE customer ADD COLUMN autoPayEnabled INTEGER DEFAULT 0', name: 'autoPayEnabled' },
     { sql: 'ALTER TABLE customer ADD COLUMN schemeId TEXT', name: 'schemeId' },
+    { sql: 'ALTER TABLE customer ADD COLUMN whatsappNumber TEXT', name: 'whatsappNumber' },
   ];
   for (const { sql } of columns) {
     try {
