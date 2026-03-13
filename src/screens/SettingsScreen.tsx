@@ -7,18 +7,24 @@ import { useApp } from '../context/AppContext';
 import { theme } from '../theme';
 
 export default function SettingsScreen({ navigation }: any) {
-  const { useApiMode, apiBaseUrl, ownerToken, refreshCustomers } = useApp();
+  const { user, setUser, useApiMode, apiBaseUrl, ownerToken, refreshCustomers } = useApp();
   const { getMinimumAmount, setMinimumAmount: setMinAmount } = useSyncedStorage();
   const [minimumAmount, setMinimumAmount] = useState('');
   const [paymentApiUrl, setPaymentApiUrl] = useState('');
   const [saved, setSaved] = useState(false);
   const [copyingToDb, setCopyingToDb] = useState(false);
   const [testingUrl, setTestingUrl] = useState(false);
+  const [ownerName, setOwnerName] = useState(user?.name || 'Owner');
+  const [currentPin, setCurrentPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [savingOwner, setSavingOwner] = useState(false);
 
   useEffect(() => {
     getMinimumAmount().then((n) => setMinimumAmount(n > 0 ? String(n) : ''));
     storage.getPaymentApiUrl().then(setPaymentApiUrl);
-  }, [getMinimumAmount]);
+    setOwnerName(user?.name || 'Owner');
+  }, [getMinimumAmount, user]);
 
   const saveMinimum = async () => {
     const n = parseInt(minimumAmount, 10);
@@ -91,9 +97,124 @@ export default function SettingsScreen({ navigation }: any) {
     }
   };
 
+  const saveOwnerProfile = async () => {
+    const trimmedName = ownerName.trim() || 'Owner';
+    if (useApiMode && apiBaseUrl && ownerToken) {
+      setSavingOwner(true);
+      try {
+        let newUser = user;
+        const payload: { name?: string; currentPin?: string; newPin?: string } = {};
+        if (trimmedName && trimmedName !== user?.name) {
+          payload.name = trimmedName;
+        }
+        if (newPin || confirmPin || currentPin) {
+          if (!currentPin) {
+            Alert.alert('Required', 'Enter your current PIN to change it.');
+            setSavingOwner(false);
+            return;
+          }
+          if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+            Alert.alert('Invalid PIN', 'New PIN must be exactly 4 digits.');
+            setSavingOwner(false);
+            return;
+          }
+          if (newPin !== confirmPin) {
+            Alert.alert('PIN mismatch', 'New PIN and confirm PIN do not match.');
+            setSavingOwner(false);
+            return;
+          }
+          payload.currentPin = currentPin;
+          payload.newPin = newPin;
+        }
+        if (Object.keys(payload).length === 0) {
+          setSavingOwner(false);
+          Alert.alert('No changes', 'Nothing to update.');
+          return;
+        }
+        const updated = await api.updateOwnerProfile(apiBaseUrl, ownerToken, payload);
+        newUser = { id: updated.id, name: updated.name, role: updated.role };
+        setUser(newUser, ownerToken);
+        setCurrentPin('');
+        setNewPin('');
+        setConfirmPin('');
+        Alert.alert('Saved', 'Owner profile updated.');
+      } catch (e: any) {
+        Alert.alert('Error', e?.message || 'Failed to update owner profile.');
+      } finally {
+        setSavingOwner(false);
+      }
+    } else {
+      // Local-only mode: just update stored user
+      const updatedLocal = {
+        id: user?.id || '1',
+        name: trimmedName,
+        role: user?.role || 'owner',
+        pin: newPin || user?.pin,
+      } as any;
+      setUser(updatedLocal);
+      setCurrentPin('');
+      setNewPin('');
+      setConfirmPin('');
+      Alert.alert('Saved', 'Owner profile updated on this device.');
+    }
+  };
+
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Settings</Text>
+
+      <View style={styles.ownerCard}>
+        <Text style={styles.sectionTitle}>Owner profile</Text>
+        <Text style={styles.label}>Name</Text>
+        <TextInput
+          style={styles.input}
+          value={ownerName}
+          onChangeText={setOwnerName}
+          placeholder="Owner name"
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        <Text style={styles.label}>Change login PIN</Text>
+        <Text style={styles.hint}>PIN is required for server login. Leave blank to keep current PIN.</Text>
+        <TextInput
+          style={styles.input}
+          value={currentPin}
+          onChangeText={setCurrentPin}
+          placeholder="Current PIN"
+          keyboardType="number-pad"
+          secureTextEntry
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        <TextInput
+          style={styles.input}
+          value={newPin}
+          onChangeText={setNewPin}
+          placeholder="New 4-digit PIN"
+          keyboardType="number-pad"
+          secureTextEntry
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        <TextInput
+          style={styles.input}
+          value={confirmPin}
+          onChangeText={setConfirmPin}
+          placeholder="Confirm new PIN"
+          keyboardType="number-pad"
+          secureTextEntry
+          placeholderTextColor={theme.colors.textSecondary}
+        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={saveOwnerProfile}
+          disabled={savingOwner}
+          activeOpacity={0.8}
+        >
+          {savingOwner ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Save Owner Profile</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.syncStatus}>
         <Text style={styles.syncLabel}>
@@ -242,6 +363,15 @@ const styles = StyleSheet.create({
   syncHint: { ...theme.typography.caption, color: theme.colors.textSecondary },
   paymentSection: { marginBottom: theme.spacing.xl },
   sectionTitle: { ...theme.typography.subtitle, marginBottom: 8, color: theme.colors.text },
+  ownerCard: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+    ...theme.shadows.sm,
+  },
   paymentCard: {
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,

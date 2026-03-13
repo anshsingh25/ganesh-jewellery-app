@@ -152,6 +152,19 @@ export async function updateMe(baseUrl: string, token: string, customer: Custome
   await request(baseUrl, token, 'PUT', '/api/me', customer);
 }
 
+// Owner profile (name / PIN)
+export async function getOwnerProfile(baseUrl: string, token: string): Promise<User> {
+  return request<User>(baseUrl, token, 'GET', '/api/auth/owner-profile');
+}
+
+export async function updateOwnerProfile(
+  baseUrl: string,
+  token: string,
+  data: { name?: string; currentPin?: string; newPin?: string }
+): Promise<User> {
+  return request<User>(baseUrl, token, 'PUT', '/api/auth/owner-profile', data);
+}
+
 // Schemes
 export async function getSchemes(baseUrl: string, token: string): Promise<Scheme[]> {
   return request<Scheme[]>(baseUrl, token, 'GET', '/api/schemes');

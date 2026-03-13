@@ -6,6 +6,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { query, queryOne } = require('../db');
+const { authMiddleware, ownerOnly } = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'ganesh-jewellers-secret-change-in-production';
@@ -58,13 +59,17 @@ function rowToInstallment(row) {
   };
 }
 
+async function getOwnerUser() {
+  return queryOne(
+    'SELECT id, name, role, pin_hash FROM users WHERE role IN (\'owner\', \'staff\') LIMIT 1'
+  );
+}
+
 // Owner login: { name, pin }
 router.post('/owner-login', async (req, res) => {
   try {
     const { name, pin } = req.body || {};
-    const user = await queryOne(
-      'SELECT id, name, role, pin_hash FROM users WHERE role IN (\'owner\', \'staff\') LIMIT 1'
-    );
+    const user = await getOwnerUser();
     if (!user) {
       return res.status(401).json({ error: 'No owner configured. Run npm run init-db first.' });
     }
@@ -84,6 +89,67 @@ router.post('/owner-login', async (req, res) => {
   } catch (e) {
     console.error('Owner login error:', e);
     res.status(500).json({ error: e.message || 'Login failed' });
+  }
+});
+
+// GET /api/auth/owner-profile (owner only, JWT)
+router.get('/owner-profile', authMiddleware, ownerOnly, async (req, res) => {
+  try {
+    const user = await getOwnerUser();
+    if (!user) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+    res.json({ id: user.id, name: user.name, role: user.role });
+  } catch (e) {
+    console.error('Get owner profile error:', e);
+    res.status(500).json({ error: e.message || 'Failed to load owner profile' });
+  }
+});
+
+// PUT /api/auth/owner-profile (owner only, change name / PIN)
+router.put('/owner-profile', authMiddleware, ownerOnly, async (req, res) => {
+  try {
+    const { name, currentPin, newPin } = req.body || {};
+    const user = await getOwnerUser();
+    if (!user) {
+      return res.status(404).json({ error: 'Owner not found' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (name && String(name).trim()) {
+      updates.push('name = ?');
+      params.push(String(name).trim());
+    }
+
+    if (newPin) {
+      const pinStr = String(newPin || '').trim();
+      if (!/^\d{4}$/.test(pinStr)) {
+        return res.status(400).json({ error: 'New PIN must be exactly 4 digits' });
+      }
+      const currentStr = String(currentPin || '');
+      const match = user.pin_hash ? await bcrypt.compare(currentStr, user.pin_hash) : true;
+      if (!match) {
+        return res.status(401).json({ error: 'Current PIN is incorrect' });
+      }
+      const hash = await bcrypt.hash(pinStr, 10);
+      updates.push('pin_hash = ?');
+      params.push(hash);
+    }
+
+    if (updates.length === 0) {
+      return res.json({ id: user.id, name: user.name, role: user.role });
+    }
+
+    params.push(user.id);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    const updated = await getOwnerUser();
+    res.json({ id: updated.id, name: updated.name, role: updated.role });
+  } catch (e) {
+    console.error('Update owner profile error:', e);
+    res.status(500).json({ error: e.message || 'Failed to update owner profile' });
   }
 });
 

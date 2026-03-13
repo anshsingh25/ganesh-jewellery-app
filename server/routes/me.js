@@ -47,6 +47,7 @@ function rowToCustomer(row) {
     id: row.id,
     name: row.name,
     mobile: row.mobile,
+    whatsappNumber: row.whatsapp_number || undefined,
     address: row.address || undefined,
     idProofUrl: row.id_proof_url || undefined,
     customerPin: row.customer_pin || undefined,
@@ -117,10 +118,11 @@ router.put('/', customerOnly, async (req, res) => {
       await conn.beginTransaction();
       const now = toMySQLDateTime(new Date());
       await conn.execute(
-        `UPDATE customers SET name=?, mobile=?, address=?, id_proof_url=?, customer_pin=?, scheme_type=?, monthly_emi_amount=?, start_date=?, status=?, completed_date=?, updated_at=?, document_status=?, document_verified_at=?, document_verified_by=?, auto_pay_enabled=?, scheme_id=? WHERE id=?`,
+        `UPDATE customers SET name=?, mobile=?, whatsapp_number=?, address=?, id_proof_url=?, customer_pin=?, scheme_type=?, monthly_emi_amount=?, start_date=?, status=?, completed_date=?, updated_at=?, document_status=?, document_verified_at=?, document_verified_by=?, auto_pay_enabled=?, scheme_id=? WHERE id=?`,
         [
           c.name,
           c.mobile,
+          c.whatsappNumber || null,
           c.address || null,
           c.idProofUrl || null,
           c.customerPin || null,

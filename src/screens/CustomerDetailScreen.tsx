@@ -72,6 +72,29 @@ export default function CustomerDetailScreen({ route, navigation }: any) {
   const remaining = getRemainingBalance(installments);
   const allPaid = installments.every((i) => i.status === 'paid');
 
+  const resetPin = () => {
+    const newPin = String(Math.floor(1000 + Math.random() * 9000));
+    Alert.alert(
+      'Reset PIN',
+      `Set a new 4-digit PIN for ${customer.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            const updated: Customer = { ...customer, customerPin: newPin };
+            await updateCustomer(updated);
+            Alert.alert(
+              'PIN reset',
+              `New PIN for ${customer.name} is ${newPin}. Share this with the customer so they can log in.`
+            );
+          },
+        },
+      ]
+    );
+  };
+
   const handlePaymentRecorded = async (
     updatedInstallments: Installment[],
     receiptInfo?: { paidAmount: number; installmentNumbers: number[] }
@@ -159,6 +182,9 @@ export default function CustomerDetailScreen({ route, navigation }: any) {
           onPress={() => navigation.navigate('EditCustomer', { customerId: customer.id })}
         >
           <Text style={styles.editBtnText}>Edit customer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.pinBtn} onPress={resetPin}>
+          <Text style={styles.pinBtnText}>Reset login PIN</Text>
         </TouchableOpacity>
       </View>
 
@@ -279,6 +305,8 @@ const styles = StyleSheet.create({
   scheme: { ...theme.typography.caption, color: theme.colors.primary, marginTop: 4 },
   editBtn: { marginTop: 8, alignSelf: 'flex-start' },
   editBtnText: { ...theme.typography.body, color: theme.colors.primary, fontWeight: '600' },
+  pinBtn: { marginTop: 4, alignSelf: 'flex-start' },
+  pinBtnText: { ...theme.typography.caption, color: theme.colors.textSecondary, fontWeight: '600' },
   docSection: {
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,
