@@ -19,12 +19,22 @@ export default function SettingsScreen({ navigation }: any) {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [savingOwner, setSavingOwner] = useState(false);
+  const [globalNotice, setGlobalNotice] = useState('');
+  const [savingNotice, setSavingNotice] = useState(false);
 
   useEffect(() => {
     getMinimumAmount().then((n) => setMinimumAmount(n > 0 ? String(n) : ''));
     storage.getPaymentApiUrl().then(setPaymentApiUrl);
+    if (useApiMode && apiBaseUrl) {
+      api
+        .getGlobalNotice(apiBaseUrl)
+        .then((text) => setGlobalNotice(text))
+        .catch(() => setGlobalNotice(''));
+    } else {
+      setGlobalNotice('');
+    }
     setOwnerName(user?.name || 'Owner');
-  }, [getMinimumAmount, user]);
+  }, [getMinimumAmount, user, useApiMode, apiBaseUrl]);
 
   const saveMinimum = async () => {
     const n = parseInt(minimumAmount, 10);
@@ -156,6 +166,26 @@ export default function SettingsScreen({ navigation }: any) {
       setNewPin('');
       setConfirmPin('');
       Alert.alert('Saved', 'Owner profile updated on this device.');
+    }
+  };
+
+  const saveNotice = async () => {
+    if (!useApiMode || !apiBaseUrl || !ownerToken) {
+      Alert.alert(
+        'Server mode required',
+        'Set Server URL and log in as owner so the notice can be shared with all customers.'
+      );
+      return;
+    }
+    setSavingNotice(true);
+    try {
+      const saved = await api.setGlobalNotice(apiBaseUrl, ownerToken, globalNotice);
+      setGlobalNotice(saved);
+      Alert.alert('Saved', saved ? 'Notice updated for all customers.' : 'Notice cleared.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to save notice.');
+    } finally {
+      setSavingNotice(false);
     }
   };
 
@@ -320,6 +350,31 @@ export default function SettingsScreen({ navigation }: any) {
         </>
       )}
 
+      <View style={styles.noticeCard}>
+        <Text style={styles.sectionTitle}>Notice for all customers</Text>
+        <Text style={styles.hint}>This message appears on the customer dashboard for everyone using this server.</Text>
+        <TextInput
+          style={[styles.input, styles.noticeInput]}
+          value={globalNotice}
+          onChangeText={setGlobalNotice}
+          placeholder="e.g. Shop will remain closed on Sunday for maintenance."
+          placeholderTextColor={theme.colors.textSecondary}
+          multiline
+        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={saveNotice}
+          disabled={savingNotice}
+          activeOpacity={0.8}
+        >
+          {savingNotice ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>{globalNotice.trim() ? 'Save notice' : 'Clear notice'}</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
         style={styles.link}
         onPress={() => navigation.navigate('Schemes')}
@@ -372,6 +427,15 @@ const styles = StyleSheet.create({
     borderLeftColor: theme.colors.primary,
     ...theme.shadows.sm,
   },
+  noticeCard: {
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing.xl,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.gold,
+    ...theme.shadows.sm,
+  },
   paymentCard: {
     backgroundColor: theme.colors.surface,
     padding: theme.spacing.lg,
@@ -394,6 +458,10 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
     backgroundColor: theme.colors.surface,
+  },
+  noticeInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   button: {
     backgroundColor: theme.colors.primary,

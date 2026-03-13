@@ -12,6 +12,7 @@ interface AppContextValue {
   apiBaseUrl: string;
   ownerToken: string | null;
   customerToken: string | null;
+  globalNotice: string;
   setUser: (u: User | null, token?: string | null) => void;
   setLoggedInCustomer: (c: Customer | null, token?: string | null) => Promise<void>;
   refreshServerUrl: () => Promise<void>;
@@ -31,6 +32,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [ownerToken, setOwnerTokenState] = useState<string | null>(null);
   const [customerToken, setCustomerTokenState] = useState<string | null>(null);
+  const [globalNotice, setGlobalNoticeState] = useState<string>('');
 
   const refreshServerUrl = useCallback(async () => {
     const baseUrl = (await storage.getPaymentApiUrl())?.trim() || '';
@@ -80,10 +82,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setUserState({ id: 'owner-1', name: 'Owner', role: 'owner' });
           const list = await api.getCustomers(baseUrl, oTok);
           setCustomers(list.map((c) => ({ ...c, installments: updateOverdueStatus(c.installments) })));
+          try {
+            const notice = await api.getGlobalNotice(baseUrl);
+            if (!cancelled) setGlobalNoticeState(notice);
+          } catch {
+            if (!cancelled) setGlobalNoticeState('');
+          }
         } else if (cTok) {
           try {
             const customer = await api.getMe(baseUrl, cTok);
-            if (customer) setLoggedInCustomerState({ ...customer, installments: updateOverdueStatus(customer.installments) });
+            if (customer) {
+              setLoggedInCustomerState({ ...customer, installments: updateOverdueStatus(customer.installments) });
+              try {
+                const notice = await api.getGlobalNotice(baseUrl);
+                if (!cancelled) setGlobalNoticeState(notice);
+              } catch {
+                if (!cancelled) setGlobalNoticeState('');
+              }
+            }
           } catch {
             await api.setCustomerToken(null);
             setCustomerTokenState(null);
@@ -103,6 +119,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const customer = withOverdue.find((c) => c.id === savedCustomerId) ?? null;
           if (customer) setLoggedInCustomerState(customer);
         }
+        setGlobalNoticeState('');
       }
     })();
     return () => { cancelled = true; };
@@ -197,6 +214,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         apiBaseUrl,
         ownerToken,
         customerToken,
+        globalNotice,
         setUser,
         setLoggedInCustomer,
         refreshServerUrl,

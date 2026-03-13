@@ -206,6 +206,29 @@ export async function setServerUrlOnServer(baseUrl: string, token: string, url: 
   await request(baseUrl, token, 'PUT', '/api/settings/payment-url', { value: url.trim() });
 }
 
+// Global notice for all customers
+export async function getGlobalNotice(baseUrl: string): Promise<string> {
+  const base = baseUrl.replace(/\/$/, '');
+  const res = await fetch(`${base}/api/settings/notice`);
+  const text = await res.text();
+  const data = text ? (JSON.parse(text) as { value?: string; error?: string }) : {};
+  if (!res.ok) {
+    throw new Error(data.error || res.statusText || 'Failed to load notice');
+  }
+  return (data.value || '').trim();
+}
+
+export async function setGlobalNotice(baseUrl: string, token: string, value: string): Promise<string> {
+  const { value: saved } = await request<{ value: string }>(
+    baseUrl,
+    token,
+    'PUT',
+    '/api/settings/notice',
+    { value }
+  );
+  return (saved || '').trim();
+}
+
 export async function getLiveRates(baseUrl: string): Promise<LiveRatesData> {
   const base = baseUrl.replace(/\/$/, '');
   const url = `${base}/api/live-rates`;

@@ -20,7 +20,7 @@ import ReceiptModal from '../../components/ReceiptModal';
 import { theme } from '../../theme';
 
 export default function CustomerDashboardScreen() {
-  const { loggedInCustomer, updateCustomer } = useApp();
+  const { loggedInCustomer, updateCustomer, globalNotice } = useApp();
   const { getMinimumAmount } = useSyncedStorage();
   const [minimumAmount, setMinimumAmount] = useState(0);
   const [receiptText, setReceiptText] = useState<string | null>(null);
@@ -127,6 +127,13 @@ export default function CustomerDashboardScreen() {
         {loggedInCustomer.schemeType} months • ₹{loggedInCustomer.monthlyEmiAmount}/month
       </Text>
 
+      {globalNotice.trim() !== '' && (
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeTitle}>Notice from Ganesh Jewellers</Text>
+          <Text style={styles.noticeText}>{globalNotice}</Text>
+        </View>
+      )}
+
       <View style={styles.docBadge}>
         <Text style={styles.docBadgeText}>
           Document: {docStatus === 'verified' ? '✅ Verified' : docStatus === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
@@ -186,6 +193,16 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.lg, paddingBottom: 40 },
   greeting: { ...theme.typography.title, color: theme.colors.text, marginBottom: 4 },
   scheme: { ...theme.typography.body, color: theme.colors.textSecondary, marginBottom: theme.spacing.sm },
+  noticeCard: {
+    backgroundColor: theme.colors.card,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.gold,
+    marginBottom: theme.spacing.lg,
+  },
+  noticeTitle: { ...theme.typography.caption, color: theme.colors.textSecondary, marginBottom: 4 },
+  noticeText: { ...theme.typography.body, color: theme.colors.text },
   docBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,

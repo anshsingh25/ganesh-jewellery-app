@@ -5,6 +5,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import type { Customer } from '../types';
 import { getNextUnpaidInstallment } from '../utils/emiLogic';
 import { getReminderMessage } from '../utils/receipt';
@@ -49,4 +50,17 @@ export async function scheduleRemindersForCustomer(customer: Customer): Promise<
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
+}
+
+/** Call once on app startup to ensure channel + permissions exist. */
+export async function ensureReminderNotificationsConfigured(): Promise<void> {
+  const granted = await requestNotificationPermissions();
+  if (!granted) return;
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('emi-reminders', {
+      name: 'EMI Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+    });
+  }
 }
