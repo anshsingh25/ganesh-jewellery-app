@@ -25,7 +25,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 export default function AddCustomerScreen({ navigation }: any) {
   const { addCustomer } = useApp();
-  const { getSchemes, getMinimumAmount, setMinimumAmount } = useSyncedStorage();
+  const { getSchemes, getMinimumAmount, setMinimumAmount: setMinAmount } = useSyncedStorage();
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -84,7 +84,7 @@ export default function AddCustomerScreen({ navigation }: any) {
       };
       await addCustomer(customer);
       if (amount >= minimumAmount) {
-        await setMinimumAmount(amount);
+        await setMinAmount(amount);
       }
       scheduleRemindersForCustomer(customer).catch(() => {});
 
